@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Video Player with Progress Tracking</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #00d4ff;
+            text-shadow: 0 2px 10px rgba(0, 212, 255, 0.3);
+        }
+
+        .player-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        @media (min-width: 992px) {
+            .player-container {
+                flex-direction: row;
+            }
+        }
+
+        .video-section {
+            flex: 3;
+        }
+
+        .playlist-section {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .video-wrapper {
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            background: #000;
+        }
+
+        #videoPlayer {
+            width: 100%;
+            display: block;
+            max-height: 70vh;
+        }
+
+        .controls {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            padding: 5px;
+        }
+
+        .control-btn:hover {
+            color: #00d4ff;
+            transform: scale(1.1);
+        }
+
+        .progress-container {
+            flex: 1;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #0099ff);
+            width: 0%;
+            border-radius: 4px;
+            transition: width 0.1s;
+        }
+
+        .time-display {
+            font-size: 14px;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .volume-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .volume-slider {
+            width: 80px;
+        }
+
+        .playlist-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #00d4ff;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+            padding-bottom: 10px;
+        }
+
+        .episode-list {
+            list-style: none;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .episode-item {
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 4px solid transparent;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .episode-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .episode-item.active {
+            background: rgba(0, 212, 255, 0.15);
+            border-left-color: #00d4ff;
+        }
+
+        .episode-info {
+            flex: 1;
+        }
+
+        .episode-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .episode-progress {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .episode-progress-bar {
+            height: 100%;
+            background: #00d4ff;
+            width: 0%;
+        }
+
+        .episode-duration {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-left: 10px;
+        }
+
+        .status-indicator {
+            background: rgba(0, 212, 255, 0.2);
+            padding: 10px 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .progress-percent {
+            color: #00d4ff;
+            font-weight: bold;
+        }
+
+        .reset-btn {
+            background: rgba(255, 50, 50, 0.2);
+            color: #ff6666;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 12px;
+        }
+
+        .reset-btn:hover {
+            background: rgba(255, 50, 50, 0.3);
+        }
+
+        .instructions {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .instructions h3 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+
+        .instructions ul {
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+        }
+
+        .episode-watched {
+            color: #00ff88;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-play-circle"></i> Smart Video Player with Progress Tracking</h1>
+        
+        <div class="player-container">
+            <div class="video-section">
+                <div class="video-wrapper">
+                    <video id="videoPlayer">
+                        <source src="" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    
+                    <div class="controls">
+                        <button class="control-btn" id="playPauseBtn">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        
+                        <button class="control-btn" id="rewindBtn">
+                            <i class="fas fa-backward"></i>
+                        </button>
+                        
+                        <button class="control-btn" id="forwardBtn">
+                            <i class="fas fa-forward"></i>
+                        </button>
+                        
+                        <div class="progress-container" id="progressContainer">
+                            <div class="progress-bar" id="progressBar"></div>
+                        </div>
+                        
+                        <div class="time-display">
+                            <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
+                        </div>
+                        
+                        <div class="volume-container">
+                            <button class="control-btn" id="muteBtn">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                            <input type="range" id="volumeSlider" class="volume-slider" min="0" max="1" step="0.1" value="1">
+                        </div>
+                        
+                        <button class="control-btn" id="fullscreenBtn">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="status-indicator">
+                    <div>
+                        Current Episode: <span id="currentEpisodeTitle">Select an episode</span>
+                    </div>
+                    <div>
+                        Progress: <span id="overallProgress" class="progress-percent">0%</span>
+                        <button class="reset-btn" id="resetProgressBtn">Reset All Progress</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="playlist-section">
+                <h2 class="playlist-title"><i class="fas fa-list"></i> Episode Playlist</h2>
+                <ul class="episode-list" id="episodeList">
+                    <!-- Episodes will be added here by JavaScript -->
+                </ul>
+                
+                <div class="instructions">
+                    <h3><i class="fas fa-info-circle"></i> How It Works</h3>
+                    <ul>
+                        <li>Click on any episode to start playing</li>
+                        <li>Your progress is automatically saved as you watch</li>
+                        <li>Green progress bars show how much you've watched</li>
+                        <li>When you return, it continues from where you left off</li>
+                        <li>Data is stored locally in your browser</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Video player with progress tracking functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const videoPlayer = document.getElementById('videoPlayer');
+            const playPauseBtn = document.getElementById('playPauseBtn');
+            const rewindBtn = document.getElementById('rewindBtn');
+            const forwardBtn = document.getElementById('forwardBtn');
+            const progressBar = document.getElementById('progressBar');
+            const progressContainer = document.getElementById('progressContainer');
+            const currentTimeEl = document.getElementById('currentTime');
+            const durationEl = document.getElementById('duration');
+            const muteBtn = document.getElementById('muteBtn');
+            const volumeSlider = document.getElementById('volumeSlider');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            const episodeList = document.getElementById('episodeList');
+            const currentEpisodeTitle = document.getElementById('currentEpisodeTitle');
+            const overallProgress = document.getElementById('overallProgress');
+            const resetProgressBtn = document.getElementById('resetProgressBtn');
+            
+            // Episode data - replace with your own video URLs
+            const episodes = [
+                {
+                    id: 1,
+                    title: "Episode 1: The Beginning",
+                    src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+                    duration: "10:00",
+                    thumbnail: ""
+                },
+                {
+                    id: 2,
+                    title: "Episode 2: The Journey",
+                    src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+                    duration: "15:30",
+                    thumbnail: ""
+                },
+                {
+                    id: 3,
+                    title: "Episode 3: The Challenge",
+                    src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+                    duration: "12:45",
+                    thumbnail: ""
+                },
+                {
+                    id: 4,
+                    title: "Episode 4: The Revelation",
+                    src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+                    duration: "18:20",
+                    thumbnail: ""
+                },
+                {
+                    id: 5,
+                    title: "Episode 5: The Finale",
+                    src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+                    duration: "22:10",
+                    thumbnail: ""
+                }
+            ];
+            
+            // Current episode
+            let currentEpisode = null;
+            
+            // Initialize the player
+            function initPlayer() {
+                // Load saved progress from localStorage
+                loadProgress();
+                
+                // Render episode list
+                renderEpisodeList();
+                
+                // Set up event listeners
+                setupEventListeners();
+                
+                // Select first episode by default
+                if (episodes.length > 0) {
+                    selectEpisode(episodes[0].id);
+                }
+            }
+            
+            // Render episode list
+            function renderEpisodeList() {
+                episodeList.innerHTML = '';
+                
+                episodes.forEach(episode => {
+                    const li = document.createElement('li');
+                    li.className = 'episode-item';
+                    li.dataset.id = episode.id;
+                    
+                    // Get saved progress for this episode
+                    const savedProgress = getSavedProgress(episode.id);
+                    const progressPercent = savedProgress ? savedProgress.percent : 0;
+                    const isWatched = progressPercent >= 95;
+                    
+                    li.innerHTML = `
+                        <div class="episode-info">
+                            <div class="episode-title">${episode.title}</div>
+                            <div class="episode-progress">
+                                <div class="episode-progress-bar" style="width: ${progressPercent}%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="episode-duration">${episode.duration}</span>
+                            ${isWatched ? '<span class="episode-watched"><i class="fas fa-check-circle"></i></span>' : ''}
+                        </div>
+                    `;
+                    
+                    li.addEventListener('click', () => selectEpisode(episode.id));
+                    episodeList.appendChild(li);
+                });
+                
+                updateOverallProgress();
+            }
+            
+            // Select an episode to play
+            function selectEpisode(episodeId) {
+                const episode = episodes.find(ep => ep.id === episodeId);
+                if (!episode) return;
+                
+                // Update current episode
+                currentEpisode = episode;
+                
+                // Update UI
+                currentEpisodeTitle.textContent = episode.title;
+                
+                // Update active state in playlist
+                document.querySelectorAll('.episode-item').forEach(item => {
+                    item.classList.remove('active');
+                    if (parseInt(item.dataset.id) === episodeId) {
+                        item.classList.add('active');
+                    }
+                });
+                
+                // Load the video
+                videoPlayer.src = episode.src;
+                
+                // Load saved progress for this episode
+                const savedProgress = getSavedProgress(episodeId);
+                if (savedProgress && savedProgress.time > 0) {
+                    // Ask user if they want to continue from where they left off
+                    if (savedProgress.time > 10 && confirm(`Continue from where you left off (${formatTime(savedProgress.time)})?`)) {
+                        videoPlayer.currentTime = savedProgress.time;
+                    }
+                }
+                
+                // Play the video
+                videoPlayer.play().catch(e => console.log("Autoplay prevented:", e));
+                
+                // Update play button
+                updatePlayButton();
+            }
+            
+            // Save progress for current episode
+            function saveProgress() {
+                if (!currentEpisode) return;
+                
+                const progress = {
+                    episodeId: currentEpisode.id,
+                    time: videoPlayer.currentTime,
+                    duration: videoPlayer.duration,
+                    percent: (videoPlayer.currentTime / videoPlayer.duration) * 100,
+                    timestamp: new Date().toISOString()
+                };
+                
+                // Save to localStorage
+                localStorage.setItem(`episode_${currentEpisode.id}`, JSON.stringify(progress));
+                
+                // Update progress bar in playlist
+                updateEpisodeProgress(currentEpisode.id, progress.percent);
+                
+                // Update overall progress
+                updateOverallProgress();
+            }
+            
+            // Get saved progress for an episode
+            function getSavedProgress(episodeId) {
+                const saved = localStorage.getItem(`episode_${episodeId}`);
+                return saved ? JSON.parse(saved) : null;
+            }
+            
+            // Update episode progress in playlist
+            function updateEpisodeProgress(episodeId, percent) {
+                const episodeItem = document.querySelector(`.episode-item[data-id="${episodeId}"]`);
+                if (episodeItem) {
+                    const progressBar = episodeItem.querySelector('.episode-progress-bar');
+                    progressBar.style.width = `${percent}%`;
+                    
+                    // Update watched status
+                    const isWatched = percent >= 95;
+                    const watchedSpan = episodeItem.querySelector('.episode-watched');
+                    
+                    if (isWatched && !watchedSpan) {
+                        const watchedEl = document.createElement('span');
+                        watchedEl.className = 'episode-watched';
+                        watchedEl.innerHTML = '<i class="fas fa-check-circle"></i>';
+                        episodeItem.querySelector('.episode-info').after(watchedEl);
+                    } else if (!isWatched && watchedSpan) {
+                        watchedSpan.remove();
+                    }
+                }
+            }
+            
+            // Update overall progress
+            function updateOverallProgress() {
+                let totalPercent = 0;
+                let completedEpisodes = 0;
+                
+                episodes.forEach(episode => {
+                    const saved = getSavedProgress(episode.id);
+                    if (saved) {
+                        totalPercent += saved.percent;
+                        if (saved.percent >= 95) completedEpisodes++;
+                    }
+                });
+                
+                const avgPercent = episodes.length > 0 ? totalPercent / episodes.length : 0;
+                overallProgress.textContent = `${avgPercent.toFixed(1)}%`;
+                
+                // Update document title with progress
+                document.title = `Video Player (${completedEpisodes}/${episodes.length} completed)`;
+            }
+            
+            // Load all saved progress
+            function loadProgress() {
+                // Just rendering will load progress
+                console.log("Progress loaded from localStorage");
+            }
+            
+            // Reset all progress
+            function resetAllProgress() {
+                if (confirm("Are you sure you want to reset all progress? This cannot be undone.")) {
+                    episodes.forEach(episode => {
+                        localStorage.removeItem(`episode_${episode.id}`);
+                    });
+                    
+                    // Reset current episode time
+                    if (currentEpisode) {
+                        videoPlayer.currentTime = 0;
+                    }
+                    
+                    // Re-render playlist
+                    renderEpisodeList();
+                }
+            }
+            
+            // Format time in MM:SS
+            function formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+            }
+            
+            // Update play/pause button
+            function updatePlayButton() {
+                const icon = playPauseBtn.querySelector('i');
+                if (videoPlayer.paused) {
+                    icon.className = 'fas fa-play';
+                } else {
+                    icon.className = 'fas fa-pause';
+                }
+            }
+            
+            // Update progress bar
+            function updateProgress() {
+                const percent = (videoPlayer.currentTime / videoPlayer.duration) * 100;
+                progressBar.style.width = `${percent}%`;
+                currentTimeEl.textContent = formatTime(videoPlayer.currentTime);
+                
+                // Auto-save progress every 5 seconds
+                if (Math.floor(videoPlayer.currentTime) % 5 === 0) {
+                    saveProgress();
+                }
+            }
+            
+            // Set up event listeners
+            function setupEventListeners() {
+                // Play/Pause
+                playPauseBtn.addEventListener('click', () => {
+                    if (videoPlayer.paused) {
+                        videoPlayer.play();
+                    } else {
+                        videoPlayer.pause();
+                    }
+                    updatePlayButton();
+                });
+                
+                // Rewind 10 seconds
+                rewindBtn.addEventListener('click', () => {
+                    videoPlayer.currentTime -= 10;
+                });
+                
+                // Forward 10 seconds
+                forwardBtn.addEventListener('click', () => {
+                    videoPlayer.currentTime += 10;
+                });
+                
+                // Video time update
+                videoPlayer.addEventListener('timeupdate', updateProgress);
+                
+                // Video loaded metadata
+                videoPlayer.addEventListener('loadedmetadata', () => {
+                    durationEl.textContent = formatTime(videoPlayer.duration);
+                });
+                
+                // Video ended
+                videoPlayer.addEventListener('ended', () => {
+                    // Mark as fully watched
+                    if (currentEpisode) {
+                        const progress = {
+                            episodeId: currentEpisode.id,
+                            time: videoPlayer.duration,
+                            duration: videoPlayer.duration,
+                            percent: 100,
+                            timestamp: new Date().toISOString()
+                        };
+                        localStorage.setItem(`episode_${currentEpisode.id}`, JSON.stringify(progress));
+                        updateEpisodeProgress(currentEpisode.id, 100);
+                        updateOverallProgress();
+                    }
+                    
+                    // Auto-play next episode if available
+                    if (currentEpisode && currentEpisode.id < episodes.length) {
+                        setTimeout(() => {
+                            selectEpisode(currentEpisode.id + 1);
+                        }, 2000);
+                    }
+                });
+                
+                // Click on progress bar to seek
+                progressContainer.addEventListener('click', (e) => {
+                    const rect = progressContainer.getBoundingClientRect();
+                    const percent = (e.clientX - rect.left) / rect.width;
+                    videoPlayer.currentTime = percent * videoPlayer.duration;
+                });
+                
+                // Mute/Unmute
+                muteBtn.addEventListener('click', () => {
+                    videoPlayer.muted = !videoPlayer.muted;
+                    const icon = muteBtn.querySelector('i');
+                    icon.className = videoPlayer.muted ? 'fas fa-volume-mute' : 'fas fa-volume-up';
+                    volumeSlider.value = videoPlayer.muted ? 0 : videoPlayer.volume;
+                });
+                
+                // Volume slider
+                volumeSlider.addEventListener('input', () => {
+                    videoPlayer.volume = volumeSlider.value;
+                    videoPlayer.muted = volumeSlider.value == 0;
+                    const icon = muteBtn.querySelector('i');
+                    icon.className = volumeSlider.value == 0 ? 'fas fa-volume-mute' : 'fas fa-volume-up';
+                });
+                
+                // Fullscreen
+                fullscreenBtn.addEventListener('click', () => {
+                    if (!document.fullscreenElement) {
+                        videoPlayer.requestFullscreen().catch(err => {
+                            console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                        });
+                    } else {
+                        document.exitFullscreen();
+                    }
+                });
+                
+                // Reset progress button
+                resetProgressBtn.addEventListener('click', resetAllProgress);
+                
+                // Save progress when leaving page
+                window.addEventListener('beforeunload', () => {
+                    if (currentEpisode && !videoPlayer.paused) {
+                        saveProgress();
+                    }
+                });
+                
+                // Auto-save progress periodically
+                setInterval(() => {
+                    if (currentEpisode && !videoPlayer.paused) {
+                        saveProgress();
+                    }
+                }, 30000); // Every 30 seconds
+            }
+            
+            // Initialize the player
+            initPlayer();
+        });
+    </script>
+</body>
+</html>
